@@ -3,10 +3,6 @@
 import Script from "next/script";
 import { useCallback, useRef } from "react";
 
-type SitemapConfig = Readonly<{
-    global: Record<string, unknown>;
-    pageTypes: ReadonlyArray<Record<string, unknown>>;
-}>;
 
 type EvergageSDK = Readonly<{
     init: (config?: Record<string, unknown>) => Promise<void>;
@@ -19,10 +15,27 @@ declare global {
     }
 }
 
+type PageTypeConfig = Readonly<{
+    name: string;
+    isMatch: () => boolean;
+    action: string;
+}>;
+
+type SitemapConfig = Readonly<{
+    global: Record<string, unknown>;
+    pageTypes: ReadonlyArray<PageTypeConfig>;
+}>;
+
 function buildSitemapConfig(): SitemapConfig {
+    const home: PageTypeConfig = {
+        name: "home",
+        isMatch: () => true, // minimal: selalu match supaya ada event awal masuk
+        action: "Home View",
+    };
+
     return {
         global: {},
-        pageTypes: [],
+        pageTypes: [home],
     };
 }
 
@@ -50,6 +63,21 @@ export function McpProvider() {
                 const message = err instanceof Error ? err.message : "Unknown MCP init error";
                 console.error("❌ MCP init failed:", message);
             });
+
+        const onEventSend = (e: Event) => {
+            console.log("📤 MCP onEventSend:", e);
+        };
+        const onEventResponse = (e: Event) => {
+            console.log("📥 MCP onEventResponse:", e);
+        };
+        const onException = (e: Event) => {
+            console.error("💥 MCP onException:", e);
+        };
+
+        document.addEventListener("evergage:onEventSend", onEventSend);
+        document.addEventListener("evergage:onEventResponse", onEventResponse);
+        document.addEventListener("evergage:onException", onException);
+
     }, []);
 
     const handleError = useCallback((): void => {
