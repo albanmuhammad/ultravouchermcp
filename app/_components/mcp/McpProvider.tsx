@@ -64,19 +64,6 @@ export function McpProvider() {
                 console.error("❌ MCP init failed:", message);
             });
 
-        const onEventSend = (e: Event) => {
-            console.log("📤 MCP onEventSend:", e);
-        };
-        const onEventResponse = (e: Event) => {
-            console.log("📥 MCP onEventResponse:", e);
-        };
-        const onException = (e: Event) => {
-            console.error("💥 MCP onException:", e);
-        };
-
-        document.addEventListener("evergage:onEventSend", onEventSend);
-        document.addEventListener("evergage:onEventResponse", onEventResponse);
-        document.addEventListener("evergage:onException", onException);
 
     }, []);
 
