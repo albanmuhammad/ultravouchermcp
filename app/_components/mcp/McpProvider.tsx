@@ -4,17 +4,6 @@ import Script from "next/script";
 import { useCallback, useRef } from "react";
 
 
-type EvergageSDK = Readonly<{
-    init: (config?: Record<string, unknown>) => Promise<void>;
-    initSitemap: (config: SitemapConfig) => void;
-}>;
-
-declare global {
-    interface Window {
-        Evergage?: EvergageSDK;
-    }
-}
-
 type PageTypeConfig = Readonly<{
     name: string;
     isMatch: () => boolean;

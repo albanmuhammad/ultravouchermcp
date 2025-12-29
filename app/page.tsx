@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { VoucherList } from "./_components/home/VoucherList";
+import { McxPushControls } from "./_components/mcx/McxPushControl";
 
 export const metadata: Metadata = {
   title: "Available Vouchers - Ultra Voucher",
@@ -84,6 +85,7 @@ export default function HomePage() {
         </header>
 
         <VoucherList vouchers={VOUCHERS} />
+        <McxPushControls />
       </div>
     </main>
   );
