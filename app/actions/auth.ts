@@ -3,6 +3,9 @@
 import { createSupabaseServerClient } from "../_components/lib/supabase/server";
 import type { ProfileInsert } from "@/app/types/db";
 
+import { registerUltraVoucherCustomer } from "@/app/_components/lib/ultravoucher/register-customer";
+import { enrollSalesforceIndividualMember } from "@/app/_components/lib/salesforce/enroll-individual-member";
+
 type ActionOk = Readonly<{ ok: true }>;
 type ActionFail = Readonly<{ ok: false; message: string }>;
 export type ActionResult = ActionOk | ActionFail;
@@ -20,6 +23,8 @@ export type LoginInput = Readonly<{
   password: string;
 }>;
 
+/* ---------------- helpers ---------------- */
+
 function isNonEmptyString(v: unknown): v is string {
   return typeof v === "string" && v.trim().length > 0;
 }
@@ -36,10 +41,12 @@ function fail(message: string): ActionFail {
   return { ok: false, message };
 }
 
+/* ---------------- REGISTER ---------------- */
+
 export async function registerAction(
   input: RegisterInput
 ): Promise<ActionResult> {
-  // --- Validate (TS-safe)
+  // 0️⃣ Validate
   if (!isNonEmptyString(input.email)) return fail("Email wajib diisi.");
   if (!isNonEmptyString(input.password)) return fail("Password wajib diisi.");
   if (!isNonEmptyString(input.phone)) return fail("Nomor HP wajib diisi.");
@@ -55,12 +62,11 @@ export async function registerAction(
   const fullName = buildFullName(firstName, lastName);
   const phone = input.phone.trim();
 
-  // 1) Create Auth user
+  /* 1️⃣ Supabase Auth */
   const signUpRes = await supabase.auth.signUp({
     email,
     password: input.password,
     options: {
-      // optional: metadata on auth.users
       data: {
         phone,
         first_name: firstName,
@@ -75,7 +81,43 @@ export async function registerAction(
   const userId = signUpRes.data.user?.id;
   if (!userId) return fail("Register gagal: userId tidak terbentuk.");
 
-  // 2) Upsert profile row (public.profiles)
+  /* 2️⃣ Integrations (PARALLEL, PARTIAL FAILURE OK) */
+  let ultraVoucherMemberId: string | null = null;
+  let salesforceMemberId: string | null = null;
+  let salesforcePersonAccountId: string | null = null;
+
+  await Promise.allSettled([
+    (async () => {
+      try {
+        ultraVoucherMemberId = await registerUltraVoucherCustomer({
+          phone,
+          countryCode: "62",
+          email,
+          fullName,
+        });
+      } catch (err) {
+        console.error("[UV] register failed", err);
+      }
+    })(),
+
+    (async () => {
+      try {
+        const sf = await enrollSalesforceIndividualMember({
+          programName: process.env.SF_LOYALTY_PROGRAM_NAME!,
+          email,
+          firstName,
+          lastName,
+          membershipNumber: `MBR-${userId.slice(0, 8)}`,
+        });
+        salesforceMemberId = sf.loyaltyProgramMemberId;
+        salesforcePersonAccountId = sf.personAccountId;
+      } catch (err) {
+        console.error("[SF] enroll failed", err);
+      }
+    })(),
+  ]);
+
+  /* 3️⃣ Upsert profile */
   const profile: ProfileInsert = {
     id: userId,
     email,
@@ -83,25 +125,27 @@ export async function registerAction(
     first_name: firstName,
     last_name: lastName,
     full_name: fullName,
+    ultra_voucher_member_id: ultraVoucherMemberId,
+    salesforce_loyalty_member_id: salesforceMemberId,
+    salesforce_person_account_id: salesforcePersonAccountId,
   };
 
   const upsertRes = await supabase
     .from("profiles")
     .upsert(profile, { onConflict: "id" });
+
   if (upsertRes.error) return fail(upsertRes.error.message);
 
-  // Note:
-  // - Supabase signUp bisa butuh email confirmation tergantung setting.
-  // - Kalau email confirmation ON, session mungkin belum aktif sampai verify.
   return { ok: true };
 }
+
+/* ---------------- LOGIN ---------------- */
 
 export async function loginAction(input: LoginInput): Promise<ActionResult> {
   if (!isNonEmptyString(input.email)) return fail("Email wajib diisi.");
   if (!isNonEmptyString(input.password)) return fail("Password wajib diisi.");
 
   const supabase = await createSupabaseServerClient();
-
   const email = normalizeEmail(input.email);
 
   const res = await supabase.auth.signInWithPassword({
@@ -113,6 +157,8 @@ export async function loginAction(input: LoginInput): Promise<ActionResult> {
 
   return { ok: true };
 }
+
+/* ---------------- LOGOUT ---------------- */
 
 export async function logoutAction(): Promise<void> {
   const supabase = await createSupabaseServerClient();

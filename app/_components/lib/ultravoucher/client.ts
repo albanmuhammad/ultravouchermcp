@@ -68,7 +68,7 @@ async function fetchNewToken(): Promise<{
   token: string;
   expiresAtMs: number;
 }> {
-  const baseUrl = mustEnv("UV_BASE_URL");
+  const baseUrl = mustEnv("UV_BASE_CONNECTOR_URL");
   const username = mustEnv("UV_SYSTEM_USERNAME");
   const password = mustEnv("UV_SYSTEM_PASSWORD");
 
@@ -129,7 +129,7 @@ export async function ultraVoucherFetch(
   path: string,
   options?: FetchOptions
 ): Promise<Response> {
-  const baseUrl = mustEnv("UV_BASE_URL");
+  const baseUrl = mustEnv("UV_BASE_CONNECTOR_URL");
   const token = await getUltraVoucherToken();
 
   const url = new URL(path, baseUrl).toString();

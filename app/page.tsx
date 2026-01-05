@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import { VoucherList } from "./_components/home/VoucherList";
 import { McxPushControls } from "./_components/mcx/McxPushControl";
+import { getNonAuthVouchers } from "./_components/lib/ultravoucher/publicClient";
 
 export const metadata: Metadata = {
   title: "Available Vouchers - Ultra Voucher",
   description: "Pilih voucher yang sesuai dengan kebutuhanmu",
 };
 
-type Voucher = Readonly<{
+export type Voucher = Readonly<{
   id: string;
   name: string;
   price: number;
@@ -15,47 +16,20 @@ type Voucher = Readonly<{
   merchant: string;
 }>;
 
-// Nanti bisa diganti dengan fetch dari API
-const VOUCHERS: ReadonlyArray<Voucher> = [
-  {
-    id: "uv-001",
-    name: "Voucher Alfamart 50K",
-    price: 50_000,
-    imageUrl: "https://alfamart.co.id/frontend/img/corporate/tentang-perusahaan/logo-guide/img-logo-dos-2.svg",
-    merchant: "Alfamart",
-  },
-  {
-    id: "uv-002",
-    name: "Voucher Alfamart 50K",
-    price: 50_000,
-    imageUrl: "https://alfamart.co.id/frontend/img/corporate/tentang-perusahaan/logo-guide/img-logo-dos-2.svg",
-    merchant: "Alfamart",
-  },
-  {
-    id: "uv-003",
-    name: "Voucher Alfamart 50K",
-    price: 50_000,
-    imageUrl: "https://alfamart.co.id/frontend/img/corporate/tentang-perusahaan/logo-guide/img-logo-dos-2.svg",
-    merchant: "Alfamart",
-  },
-  {
-    id: "uv-004",
-    name: "Voucher Alfamart 50K",
-    price: 50_000,
-    imageUrl: "https://alfamart.co.id/frontend/img/corporate/tentang-perusahaan/logo-guide/img-logo-dos-2.svg",
-    merchant: "Alfamart",
-  },
-  {
-    id: "uv-005",
-    name: "Voucher Alfamart 50K",
-    price: 50_000,
-    imageUrl: "https://alfamart.co.id/frontend/img/corporate/tentang-perusahaan/logo-guide/img-logo-dos-2.svg",
-    merchant: "Alfamart",
-  },
-  // ... vouchers lainnya
-];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const data = await getNonAuthVouchers("CL-0004", {
+    limit: 12,
+    page: 1,
+  });
+
+  const vouchers = data.docs.map((v) => ({
+    id: v.id,
+    name: v.name,
+    price: v.price,
+    imageUrl: v.image,
+    merchant: v.clientName,
+  }));
   return (
     <main style={{
       minHeight: "100vh",
@@ -84,11 +58,10 @@ export default function HomePage() {
           </p>
         </header>
 
-        <VoucherList vouchers={VOUCHERS} />
+        <VoucherList vouchers={vouchers} />
         <McxPushControls />
       </div>
     </main>
   );
 }
 
-export type { Voucher };
