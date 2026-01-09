@@ -115,7 +115,7 @@ function buildPushIdentity(params: {
     // ✅ Preferred: MCP User ID
     if (mcpUserId) {
         console.log('ada nih mcpuseridnya')
-        return { identity: { UserID: mcpUserId, EmailAddress: mcpUserId }, source: "mcp" };
+        return { identity: { UserID: mcpUserId, EmailAddress: 'test@gmail.com' }, source: "mcp" };
     }
 
     // Fallback: Supabase identity

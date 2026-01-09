@@ -2,6 +2,15 @@ import type { Metadata } from "next";
 import { VoucherList } from "./_components/home/VoucherList";
 import { McxPushControls } from "./_components/mcx/McxPushControl";
 import { getNonAuthVouchers } from "./_components/lib/ultravoucher/publicClient";
+import { getUltraVoucherToken } from "./_components/lib/ultravoucher/client";
+import { getWidgetVouchers } from "./_components/lib/ultravoucher/widgetClient";
+import { mapWidgetVoucherToUi } from "./_components/lib/ultravoucher/mapper";
+import { createSupabaseServerClient } from "@/app/_components/lib/supabase/server";
+import { getWidgetAccessKey } from "./_components/lib/ultravoucher/widgetSession";
+import { WidgetUnauthorizedError } from "./_components/lib/ultravoucher/errors";
+import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { logoutAction } from "./actions/auth";
 
 export const metadata: Metadata = {
   title: "Available Vouchers - Ultra Voucher",
@@ -18,18 +27,81 @@ export type Voucher = Readonly<{
 
 
 export default async function HomePage() {
-  const data = await getNonAuthVouchers("CL-0004", {
-    limit: 12,
-    page: 1,
-  });
 
-  const vouchers = data.docs.map((v) => ({
-    id: v.id,
-    name: v.name,
-    price: v.price,
-    imageUrl: v.image,
-    merchant: v.clientName,
-  }));
+  const handleLogout = async () => {
+    await logoutAction();
+  };
+
+
+  let vouchers: Voucher[] = [];
+  let isLoggedIn = false;
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+
+  const widgetToken = await getWidgetAccessKey();
+
+  if (!widgetToken) {
+    const supabase = await createSupabaseServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    isLoggedIn = Boolean(user);
+  }
+
+  // Widget auth flow
+  if (widgetToken) {
+    try {
+      const data = await getWidgetVouchers(widgetToken, {
+        limit: 12,
+        page: 1,
+      });
+      vouchers = data.docs.map((v) => ({
+        id: v.id,
+        name: v.name,
+        price: v.price,
+        imageUrl: v.image ?? "",
+        merchant: v.brand ?? "-",
+      }));
+    } catch (err) {
+      if (err instanceof WidgetUnauthorizedError) {
+        redirect("/login?reason=session_expired");
+      } else {
+        throw err;
+      }
+    }
+  }
+  // Supabase auth flow
+  else if (isLoggedIn) {
+    // Handle logged in user with Supabase
+    const token = await getUltraVoucherToken(); // or however you get this
+    const data = await getWidgetVouchers(token, {
+      limit: 12,
+      page: 1,
+    });
+    vouchers = data.docs.map((v) => ({
+      id: v.id,
+      name: v.name,
+      price: v.price,
+      imageUrl: v.image ?? "",
+      merchant: v.brand ?? "-",
+    }));
+  }
+  // Non-auth flow
+  else {
+    const data = await getNonAuthVouchers("CL-0004", {
+      limit: 12,
+      page: 1,
+    });
+    vouchers = data.docs.map((v) => ({
+      id: v.id,
+      name: v.name,
+      price: v.price,
+      imageUrl: v.image,
+      merchant: v.clientName,
+    }));
+  }
+
   return (
     <main style={{
       minHeight: "100vh",
@@ -58,7 +130,7 @@ export default async function HomePage() {
           </p>
         </header>
 
-        <VoucherList vouchers={vouchers} />
+        <VoucherList vouchers={vouchers} isLoggedIn={isLoggedIn} />
         <McxPushControls />
       </div>
     </main>

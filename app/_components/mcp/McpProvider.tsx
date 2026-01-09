@@ -3,61 +3,78 @@
 import Script from "next/script";
 import { useCallback, useRef } from "react";
 
-
-type PageTypeConfig = Readonly<{
-    name: string;
-    isMatch: () => boolean;
-    action: string;
-}>;
-
-type SitemapConfig = Readonly<{
-    global: Record<string, unknown>;
-    pageTypes: ReadonlyArray<PageTypeConfig>;
-}>;
-
-function buildSitemapConfig(): SitemapConfig {
-    const home: PageTypeConfig = {
-        name: "home",
-        isMatch: () => true, // minimal: selalu match supaya ada event awal masuk
-        action: "Home View",
-    };
-
+function buildSitemapConfig() {
     return {
-        global: {},
-        pageTypes: [home],
-    };
+        global: {
+            onActionEvent: (event) => {
+                const email = localStorage.getItem("user_email");
+
+                if (email) {
+                    return {
+                        ...event,
+                        user: {
+                            attributes: {
+                                emailAddress: email,
+                            },
+                        },
+                    };
+                }
+
+                return event;
+            },
+        },
+
+        pageTypeDefault: {
+            name: "default",
+        },
+
+        pageTypes: [
+            {
+                name: "home",
+                action: "Homepage View",
+                isMatch: async () => window.location.pathname === "/",
+            },
+            {
+                name: "voucher_detail",
+                action: "View Voucher",
+                itemAction: "View Item",
+                isMatch: async () =>
+                    /^\/voucher\/[^/]+$/.test(window.location.pathname),
+            },
+            {
+                name: "cart",
+                action: "View Cart",
+                itemAction: "ViewCart",
+                isMatch: async () => window.location.pathname === "/cart",
+            },
+        ],
+    } satisfies Parameters<
+        NonNullable<Window["Evergage"]>["initSitemap"]
+    >[0];
 }
 
 export function McpProvider() {
-    const initializedRef = useRef<boolean>(false);
+    const initialized = useRef(false);
 
-    const handleLoaded = useCallback((): void => {
-        if (initializedRef.current) return;
-        initializedRef.current = true;
+    const onLoad = useCallback(() => {
+        if (initialized.current) return;
+        initialized.current = true;
 
         const sdk = window.Evergage;
         if (!sdk) {
-            // Script "onLoad" terpanggil tapi Evergage tidak ada -> berarti script gagal execute / beda konten / blocked
-            console.error("❌ MCP: Script loaded, but window.Evergage is still undefined.");
+            console.error("❌ MCP: Evergage SDK missing");
             return;
         }
 
-        void sdk
+        sdk
             .init({ cookieDomain: window.location.hostname })
             .then(() => {
                 sdk.initSitemap(buildSitemapConfig());
-                console.log("✅ MCP initialized + sitemap loaded");
+                console.log("✅ MCP initialized (TS safe)");
             })
             .catch((err: unknown) => {
-                const message = err instanceof Error ? err.message : "Unknown MCP init error";
-                console.error("❌ MCP init failed:", message);
+                console.error("❌ MCP init failed", err);
             });
-
-
-    }, []);
-
-    const handleError = useCallback((): void => {
-        console.error("❌ MCP: Failed to load evergage.min.js (network/CSP/adblock).");
     }, []);
 
     return (
@@ -65,8 +82,7 @@ export function McpProvider() {
             id="evergage-sdk"
             src="https://cdn.evgnet.com/beacon/partnermii/ultravouchermcp/scripts/evergage.min.js"
             strategy="afterInteractive"
-            onLoad={handleLoaded}
-            onError={handleError}
+            onLoad={onLoad}
         />
     );
 }

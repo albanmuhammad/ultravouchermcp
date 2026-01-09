@@ -10,7 +10,7 @@ type EnrollInput = Readonly<{
 
 type EnrollResult = Readonly<{
   loyaltyProgramMemberId: string;
-  personAccountId: string;
+  contactId: string;
 }>;
 
 function isObject(x: unknown): x is Record<string, unknown> {
@@ -70,13 +70,13 @@ export async function enrollSalesforceIndividualMember(
   if (
     !isObject(json) ||
     typeof json.loyaltyProgramMemberId !== "string" ||
-    typeof json.personAccountId !== "string"
+    typeof json.contactId !== "string"
   ) {
     throw new Error(`SF enroll unexpected response: ${text}`);
   }
 
   return {
     loyaltyProgramMemberId: json.loyaltyProgramMemberId,
-    personAccountId: json.personAccountId,
+    contactId: json.contactId,
   };
 }

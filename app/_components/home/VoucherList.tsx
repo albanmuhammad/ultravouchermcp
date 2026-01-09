@@ -3,9 +3,10 @@ import { VoucherCard } from "./VoucherCard";
 
 type VoucherListProps = {
     vouchers: ReadonlyArray<Voucher>;
+    isLoggedIn: boolean;
 };
 
-export function VoucherList({ vouchers }: VoucherListProps) {
+export function VoucherList({ vouchers, isLoggedIn }: VoucherListProps) {
     return (
         <div style={{
             display: "grid",
@@ -13,7 +14,7 @@ export function VoucherList({ vouchers }: VoucherListProps) {
             gap: 24
         }}>
             {vouchers.map((voucher) => (
-                <VoucherCard key={voucher.id} voucher={voucher} />
+                <VoucherCard key={voucher.id} voucher={voucher} isLoggedIn={isLoggedIn} />
             ))}
         </div>
     );

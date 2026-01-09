@@ -45,3 +45,34 @@ export async function getNonAuthVouchers(
 
   return json.data;
 }
+
+export async function getVoucherById(
+  clientId: string,
+  voucherId: string
+): Promise<UltravoucherResponse["data"]["docs"][number] | null> {
+  const baseUrl = mustEnv("UV_BASE_SYSTEM_URL");
+
+  const searchParams = new URLSearchParams({
+    page: "1",
+    limit: "1",
+    voucherId,
+  });
+
+  const res = await fetch(
+    `${baseUrl}/v1/vouchers/non-auth/${clientId}?${searchParams.toString()}`,
+    { cache: "no-store" }
+  );
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`UV voucher detail error ${res.status}: ${text}`);
+  }
+
+  const json = (await res.json()) as UltravoucherResponse;
+
+  if (json.meta.code !== 0) {
+    throw new Error(`UV meta.code != 0 (${json.meta.code})`);
+  }
+
+  return json.data.docs[0] ?? null;
+}

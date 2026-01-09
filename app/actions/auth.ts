@@ -1,10 +1,12 @@
 "use server";
 
-import { createSupabaseServerClient } from "../_components/lib/supabase/server";
+import { createSupabaseServerActionClient } from "../_components/lib/supabase/server-action";
 import type { ProfileInsert } from "@/app/types/db";
+import { cookies } from "next/headers";
 
 import { registerUltraVoucherCustomer } from "@/app/_components/lib/ultravoucher/register-customer";
 import { enrollSalesforceIndividualMember } from "@/app/_components/lib/salesforce/enroll-individual-member";
+import { topupUltraVoucherPoint } from "../_components/lib/ultravoucher/topup";
 
 type ActionOk = Readonly<{ ok: true }>;
 type ActionFail = Readonly<{ ok: false; message: string }>;
@@ -54,7 +56,7 @@ export async function registerAction(
     return fail("First name wajib diisi.");
   if (!isNonEmptyString(input.lastName)) return fail("Last name wajib diisi.");
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerActionClient();
 
   const email = normalizeEmail(input.email);
   const firstName = input.firstName.trim();
@@ -95,6 +97,10 @@ export async function registerAction(
           email,
           fullName,
         });
+        await topupUltraVoucherPoint({
+          userId: ultraVoucherMemberId,
+          point: 500_000,
+        });
       } catch (err) {
         console.error("[UV] register failed", err);
       }
@@ -110,7 +116,8 @@ export async function registerAction(
           membershipNumber: `MBR-${userId.slice(0, 8)}`,
         });
         salesforceMemberId = sf.loyaltyProgramMemberId;
-        salesforcePersonAccountId = sf.personAccountId;
+        salesforcePersonAccountId = sf.contactId;
+        console.log(sf);
       } catch (err) {
         console.error("[SF] enroll failed", err);
       }
@@ -145,7 +152,7 @@ export async function loginAction(input: LoginInput): Promise<ActionResult> {
   if (!isNonEmptyString(input.email)) return fail("Email wajib diisi.");
   if (!isNonEmptyString(input.password)) return fail("Password wajib diisi.");
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerActionClient();
   const email = normalizeEmail(input.email);
 
   const res = await supabase.auth.signInWithPassword({
@@ -161,6 +168,9 @@ export async function loginAction(input: LoginInput): Promise<ActionResult> {
 /* ---------------- LOGOUT ---------------- */
 
 export async function logoutAction(): Promise<void> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerActionClient();
   await supabase.auth.signOut();
+
+  const cookieStore = await cookies();
+  cookieStore.delete("uv_access_key");
 }

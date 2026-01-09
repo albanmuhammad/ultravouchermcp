@@ -25,3 +25,29 @@ export type UltravoucherResponse = Readonly<{
     totalPages: number;
   };
 }>;
+
+export type UltravoucherMeta = Readonly<{
+  code: number;
+  message?: string;
+}>;
+
+export type UltravoucherVoucher = Readonly<{
+  id: string;
+  name: string;
+  point: number;
+  price: number;
+  image?: string;
+  brand?: string;
+  category?: string;
+}>;
+
+export type UltravoucherV2Response = Readonly<{
+  meta: UltravoucherMeta;
+  data: Readonly<{
+    docs: ReadonlyArray<UltravoucherVoucher>;
+    page: number;
+    limit: number;
+    totalDocs: number;
+    totalPages: number;
+  }>;
+}>;

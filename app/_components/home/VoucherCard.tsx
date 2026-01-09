@@ -6,6 +6,7 @@ import type { Voucher } from "@/app/page";
 
 type VoucherCardProps = {
     voucher: Voucher;
+    isLoggedIn: boolean;
 };
 
 function formatRupiah(value: number): string {
@@ -16,12 +17,15 @@ function formatRupiah(value: number): string {
     }).format(value);
 }
 
-export function VoucherCard({ voucher }: VoucherCardProps) {
+export function VoucherCard({ voucher, isLoggedIn }: VoucherCardProps) {
     const [isHovered, setIsHovered] = useState(false);
+    const href = isLoggedIn
+        ? `/voucher/${encodeURIComponent(voucher.id)}`
+        : `/login?redirect=/voucher/${encodeURIComponent(voucher.id)}`;
 
     return (
         <Link
-            href={`/voucher/${encodeURIComponent(voucher.id)}`}
+            href={href}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             style={{
@@ -111,7 +115,7 @@ export function VoucherCard({ voucher }: VoucherCardProps) {
                         opacity: isHovered ? 1 : 0,
                         transition: "opacity 0.2s ease"
                     }}>
-                        Beli →
+                        Lihat Detail →
                     </div>
                 </div>
             </div>

@@ -30,10 +30,8 @@ export async function createSupabaseServerClient() {
         .getAll()
         .map((c) => ({ name: c.name, value: c.value }));
     },
-    setAll(cookiesToSet: ReadonlyArray<CookieToSet>) {
-      for (const c of cookiesToSet) {
-        cookieStore.set(c.name, c.value, c.options);
-      }
+    setAll() {
+      // ❌ NOOP — jangan set cookie di Server Component
     },
   };
 
