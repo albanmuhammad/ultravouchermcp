@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useState, type FormEvent, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/app/_components/lib/supabase/client";
 import { loginUvCustomer } from "../_components/lib/ultravoucher/ultravoucher-login";
 
@@ -11,6 +11,7 @@ type Props = {
 
 export function LoginForm({ redirectTo }: Props) {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const supabase = createSupabaseBrowserClient();
 
     const [email, setEmail] = useState("");
@@ -18,27 +19,67 @@ export function LoginForm({ redirectTo }: Props) {
     const [phone, setPhone] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [infoMessage, setInfoMessage] = useState<string | null>(null);
+
+    // Show message based on redirect reason and check if already logged in
+    useEffect(() => {
+        const reason = searchParams.get("reason");
+
+        // Check if user is already logged in to Supabase
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            if (user && reason === "uv_token_required") {
+                // User is logged in to Supabase, just need UV token
+                // Pre-fill email from Supabase
+                setEmail(user.email || "");
+                setInfoMessage("Anda sudah login. Silakan masukkan nomor telepon UltraVoucher untuk melanjutkan.");
+            } else if (reason === "session_expired") {
+                setInfoMessage("Sesi Anda telah berakhir. Silakan login kembali.");
+            } else if (reason === "uv_session_expired") {
+                setInfoMessage("Sesi UltraVoucher Anda telah berakhir. Silakan login kembali.");
+            } else if (reason === "login_required") {
+                setInfoMessage("Silakan login untuk melanjutkan.");
+            }
+        });
+    }, [searchParams, supabase.auth]);
 
     async function handleSubmit(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
         setError(null);
+        setInfoMessage(null);
         setLoading(true);
 
         try {
-            const { error: authError } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-            });
+            // Check if user is already logged in to Supabase
+            const { data: { user } } = await supabase.auth.getUser();
 
-            if (authError) throw new Error(authError.message);
+            if (!user) {
+                // Step 1: Login to Supabase if not logged in
+                const { error: authError } = await supabase.auth.signInWithPassword({
+                    email,
+                    password,
+                });
 
-            await loginUvCustomer({
-                email,
-                phone,
-                countryCode: "62",
-            });
+                if (authError) throw new Error(authError.message);
+            }
 
+            // Step 2: Login to UltraVoucher to get access key (always required)
+            try {
+                await loginUvCustomer({
+                    email,
+                    phone,
+                    countryCode: "62",
+                });
+            } catch (uvError) {
+                throw new Error(
+                    uvError instanceof Error
+                        ? `UltraVoucher login failed: ${uvError.message}`
+                        : "UltraVoucher login failed"
+                );
+            }
+
+            // Step 3: Redirect on success
             router.replace(redirectTo);
+            router.refresh(); // Force refresh to get new cookies
         } catch (err) {
             setError(err instanceof Error ? err.message : "Login failed");
         } finally {
@@ -58,6 +99,13 @@ export function LoginForm({ redirectTo }: Props) {
                 </p>
             </div>
 
+            {/* Info Message */}
+            {infoMessage && (
+                <div className="mb-4 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 text-sm text-blue-700">
+                    {infoMessage}
+                </div>
+            )}
+
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Email */}
@@ -72,21 +120,24 @@ export function LoginForm({ redirectTo }: Props) {
                         onChange={(e) => setEmail(e.target.value)}
                         className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="email@example.com"
+                        disabled={loading}
                     />
                 </div>
 
-                {/* Password */}
+                {/* Password - only show if user is not logged in to Supabase yet */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                         Password
+                        {email && " (kosongkan jika sudah login)"}
                     </label>
                     <input
                         type="password"
-                        required
+                        required={!email} // Only required if email is empty
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="••••••••"
+                        disabled={loading}
                     />
                 </div>
 
@@ -102,9 +153,10 @@ export function LoginForm({ redirectTo }: Props) {
                         onChange={(e) => setPhone(e.target.value)}
                         className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="812xxxxxx"
+                        disabled={loading}
                     />
                     <p className="text-xs text-gray-400 mt-1">
-                        Digunakan untuk login ke UltraVoucher
+                        Nomor yang terdaftar di UltraVoucher (tanpa +62)
                     </p>
                 </div>
 

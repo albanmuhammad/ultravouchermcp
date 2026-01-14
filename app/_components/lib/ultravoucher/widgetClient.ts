@@ -1,5 +1,4 @@
 import type { UltravoucherV2Response } from "@/app/types/ultravoucher";
-import { cookies } from "next/headers";
 import { WidgetUnauthorizedError } from "./errors";
 
 function mustEnv(name: string): string {
@@ -26,17 +25,27 @@ async function widgetFetch(
       cache: "no-store",
     }
   );
-  if (res.status === 401) {
-    throw new WidgetUnauthorizedError();
-  }
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`UV widget error ${res.status}: ${text}`);
-  }
 
-  if (!res.ok) {
-    const text = await res.text();
+    // Try to parse as JSON to check for E3 error
+    try {
+      const json = JSON.parse(text);
+      if (
+        json.errorCode === "E3" ||
+        json.msg?.includes("Not found user detail data")
+      ) {
+        throw new WidgetUnauthorizedError();
+      }
+    } catch (e) {
+      // If not JSON or doesn't have E3 error, continue with normal error handling
+    }
+
+    if (res.status === 401) {
+      throw new WidgetUnauthorizedError();
+    }
+
     throw new Error(`UV widget error ${res.status}: ${text}`);
   }
 
@@ -48,6 +57,7 @@ async function widgetFetch(
 
   return json;
 }
+
 export async function getWidgetVouchers(
   token: string,
   params?: Readonly<{

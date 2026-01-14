@@ -37,8 +37,10 @@ type Cart = Readonly<{
 // Generic catalog item (Product, Voucher, etc.)
 type CatalogItem = Readonly<{
   _id: string;
+  orderId?: string;
   name?: string;
   price?: number;
+  quantity?: number;
   sku?: { _id: string };
   relatedCatalogObjects?: Record<string, readonly string[]>;
   [key: string]: unknown;

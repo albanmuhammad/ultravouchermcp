@@ -2,6 +2,8 @@ import { createSupabaseServerClient } from "@/app/_components/lib/supabase/serve
 import { redirect } from "next/navigation";
 import { RemoveFromCartButton } from "./RemoveFromCartButton";
 
+import { RedeemButton } from "./RedeemButton";
+
 export default async function CartPage() {
     const supabase = await createSupabaseServerClient();
 
@@ -18,6 +20,13 @@ export default async function CartPage() {
         .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
+
+    const redeemItems =
+        items?.map((item) => ({
+            voucher_id: item.voucher_id,
+            price: Number(item.price),
+            quantity: item.quantity,
+        })) ?? [];
 
     const total =
         items?.reduce(
@@ -68,12 +77,7 @@ export default async function CartPage() {
                         </div>
 
                         {/* Placeholder redeem button */}
-                        <button
-                            disabled
-                            className="mt-6 w-full bg-gray-300 text-gray-600 py-3 rounded-xl cursor-not-allowed"
-                        >
-                            Redeem (coming next)
-                        </button>
+                        <RedeemButton items={redeemItems} />
                     </>
                 )}
             </div>

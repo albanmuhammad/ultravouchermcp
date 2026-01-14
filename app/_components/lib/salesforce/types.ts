@@ -42,3 +42,17 @@ export type SfEnrollmentResponse = Readonly<{
   loyaltyProgramMemberId: string;
   personAccountId: string;
 }>;
+
+export type SalesforceMemberCurrency = Readonly<{
+  programCurrency: string;
+  pointsBalance: number;
+  escrowPointsBalance?: number;
+}>;
+
+export type SalesforceMemberProfile = Readonly<{
+  programName: string;
+  memberId: string;
+  memberStatus: string;
+  membershipNumber?: string;
+  memberCurrencies: ReadonlyArray<SalesforceMemberCurrency>;
+}>;
