@@ -80,6 +80,7 @@ type PageType = Readonly<{
   name: string;
   action?: string;
   itemAction?: ItemAction;
+  contentZones?: readonly string[];
   isMatch: () => boolean;
 }>;
 
