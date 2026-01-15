@@ -77,6 +77,17 @@ export function LoginForm({ redirectTo }: Props) {
                 );
             }
 
+            localStorage.setItem("user_email", email);
+
+            window.Evergage?.sendEvent({
+                action: "User Login",
+                user: {
+                    attributes: {
+                        emailAddress: email,
+                    },
+                },
+            });
+
             // Step 3: Redirect on success
             router.replace(redirectTo);
             router.refresh(); // Force refresh to get new cookies

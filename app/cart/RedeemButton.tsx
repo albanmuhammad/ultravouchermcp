@@ -26,17 +26,18 @@ export function RedeemButton({ items }: Props) {
 
         window.Evergage?.sendEvent({
             itemAction: "Purchase",
-            catalog: {
+            order: {
                 Product: {
-                    _id: orderId, // ✅ satisfy CatalogItem
                     orderId: orderId,
                     totalValue: total,
                     currency: "IDR",
-                    lineItems: {
-                        _id: 'a5a9dfcb-a8cb-402b-a9da-3b2339e72f16',
-                        price: 50000,
-                        quantity: 1,
-                    },
+                    lineItems: [
+                        {
+                            _id: 'a5a9dfcb-a8cb-402b-a9da-3b2339e72f16',
+                            price: 50000,
+                            quantity: 1,
+                        },
+                    ],
                 },
             },
         });

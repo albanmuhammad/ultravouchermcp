@@ -11,18 +11,37 @@ type PageProps = {
 };
 
 export default async function VoucherDetailPage({ params }: PageProps) {
-    const { voucherId } = await params;
-    const token = await getWidgetAccessKey();
+    // const { voucherId } = await params;
+    // const token = await getWidgetAccessKey();
 
-    if (!token) {
-        notFound(); // atau redirect login
-    }
+    // if (!token) {
+    //     notFound(); // atau redirect login
+    // }
 
-    const voucher = await getWidgetVoucherById(token, voucherId);
+    // const voucher = await getWidgetVoucherById(token, voucherId);
 
-    if (!voucher) {
-        notFound();
-    }
+    // if (!voucher) {
+    //     notFound();
+    // }
+
+    const mockVoucher = {
+        id: "a5a9dfcb-a8cb-402b-a9da-3b2339e72f16",
+        name: "Traveloka Rp. 50.000",
+        code: "TLK00050",
+        nominal: 50000,
+        price: 50000,
+        stockAvailable: 905,
+        redeemed: 19,
+        image: "https://uvstaging.oss-ap-southeast-5.aliyuncs.com/mdm/assets/images/2024-05-17T01%3A37%3A45.382Zgroup.jpeg",
+        type: "VOUCHER",
+        categoryName: "Hotel",
+        merchantCode: "TLK",
+        clientName: "Sour Sally Green",
+        brand: "Traveloka", // ← tambahan agar UI tidak "-"
+    };
+
+    const voucher = mockVoucher;
+
 
     return (
         <main className="min-h-screen bg-gray-50 p-10">

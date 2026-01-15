@@ -1,7 +1,8 @@
 "use client";
 
 import Script from "next/script";
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 
 function buildSitemapConfig() {
     return {
@@ -32,20 +33,19 @@ function buildSitemapConfig() {
             {
                 name: "home",
                 action: "Homepage View",
-                isMatch: async () => window.location.pathname === "/",
+                isMatch: () => window.location.pathname === "/",
             },
             {
                 name: "voucher_detail",
                 action: "View Voucher",
                 itemAction: "View Item",
-                isMatch: async () =>
-                    /^\/voucher\/[^/]+$/.test(window.location.pathname),
+                isMatch: () => /^\/voucher\/[^/]+$/.test(window.location.pathname),
             },
             {
                 name: "cart",
                 action: "View Cart",
                 itemAction: "ViewCart",
-                isMatch: async () => window.location.pathname === "/cart",
+                isMatch: () => window.location.pathname === "/cart",
             },
         ],
     } satisfies Parameters<
@@ -55,6 +55,7 @@ function buildSitemapConfig() {
 
 export function McpProvider() {
     const initialized = useRef(false);
+    const pathname = usePathname();
 
     const onLoad = useCallback(() => {
         if (initialized.current) return;
@@ -70,12 +71,24 @@ export function McpProvider() {
             .init({ cookieDomain: window.location.hostname })
             .then(() => {
                 sdk.initSitemap(buildSitemapConfig());
-                console.log("✅ MCP initialized (TS safe)");
+                console.log("✅ MCP initialized & sitemap loaded");
             })
-            .catch((err: unknown) => {
+            .catch((err) => {
                 console.error("❌ MCP init failed", err);
             });
     }, []);
+
+    /**
+     * 🔁 WAJIB untuk Next.js SPA
+     */
+    useEffect(() => {
+        if (!initialized.current) return;
+
+        if (window.Evergage) {
+            window.Evergage.reinit();
+            console.log("🔁 MCP reinit on route change:", pathname);
+        }
+    }, [pathname]);
 
     return (
         <Script

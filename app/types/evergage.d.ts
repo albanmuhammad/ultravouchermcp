@@ -36,7 +36,7 @@ type Cart = Readonly<{
 
 // Generic catalog item (Product, Voucher, etc.)
 type CatalogItem = Readonly<{
-  _id: string;
+  _id?: string;
   orderId?: string;
   name?: string;
   price?: number;
@@ -63,6 +63,8 @@ type EvergageEvent = Readonly<{
   itemType?: string;
   itemId?: string;
 
+  order?: Order;
+
   /** ✅ Correct MCP way */
   catalog?: Catalog;
   cart?: Cart;
@@ -78,7 +80,7 @@ type PageType = Readonly<{
   name: string;
   action?: string;
   itemAction?: ItemAction;
-  isMatch: () => Promise<boolean>;
+  isMatch: () => boolean;
 }>;
 
 type SitemapConfig = Readonly<{
@@ -89,12 +91,30 @@ type SitemapConfig = Readonly<{
   pageTypes: ReadonlyArray<PageType>;
 }>;
 
+type LineItem = Readonly<{
+  _id: string;
+  price?: number;
+  quantity?: number;
+  sku?: { _id: string };
+  [key: string]: unknown;
+}>;
+
+type Order = Readonly<{
+  Product: {
+    orderId: string;
+    totalValue?: number;
+    currency?: string;
+    lineItems: ReadonlyArray<LineItem>;
+  };
+}>;
+
 /* =========================
  * SDK
  * ========================= */
 interface EvergageSDK {
   init: (config?: { cookieDomain?: string }) => Promise<void>;
   initSitemap: (config: SitemapConfig) => void;
+  reinit: () => void;
   sendEvent: (event: EvergageEvent) => void;
   getUserId: () => string;
 }
