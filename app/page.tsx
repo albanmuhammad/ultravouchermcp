@@ -163,7 +163,7 @@ export default async function HomePage() {
           }}>
             Available Vouchers
           </h1>
-          <div data-evg-zone="homepage-voucher-banner" />
+          <div id="homepage-voucher-banner"></div>
           <p style={{
             fontSize: 16,
             color: "#666",

@@ -80,8 +80,13 @@ type PageType = Readonly<{
   name: string;
   action?: string;
   itemAction?: ItemAction;
-  contentZones?: readonly string[];
+  contentZones?: ReadonlyArray<ContentZone>;
   isMatch: () => boolean;
+}>;
+
+type ContentZone = Readonly<{
+  name: string;
+  selector: string;
 }>;
 
 type SitemapConfig = Readonly<{

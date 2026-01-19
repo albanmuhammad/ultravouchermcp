@@ -34,7 +34,12 @@ function buildSitemapConfig() {
                 name: "home",
                 action: "Homepage View",
                 isMatch: () => window.location.pathname === "/",
-                contentZones: ["homepage-voucher-banner"],
+                contentZones: [
+                    {
+                        name: "homepage-voucher-banner",
+                        selector: "#homepage-voucher-banner",
+                    },
+                ]
             },
             {
                 name: "voucher_detail",
