@@ -7,6 +7,7 @@ import { createSupabaseServerClient } from "@/app/_components/lib/supabase/serve
 import { getWidgetAccessKey } from "./_components/lib/ultravoucher/widgetSession";
 import { cookies } from "next/headers";
 import { logoutAction } from "./actions/auth";
+import { MOCK_VOUCHERS } from "./_mock/vouchers";
 
 export const metadata: Metadata = {
   title: "Available Vouchers - Ultra Voucher",
@@ -21,9 +22,13 @@ export type Voucher = Readonly<{
   merchant: string;
 }>;
 
+
+
+
 export default async function HomePage() {
   let vouchers: Voucher[] = [];
   let isLoggedIn = false;
+  const USE_MOCK = true;
 
 
   const supabase = await createSupabaseServerClient();
@@ -43,7 +48,13 @@ export default async function HomePage() {
       page: 1,
     });
 
-    vouchers = data.docs.map((v) => ({
+    vouchers = USE_MOCK ? MOCK_VOUCHERS.map((v) => ({
+      id: v.id,
+      name: v.name,
+      price: v.price,
+      imageUrl: v.image,   // ⬅️ mapping
+      merchant: v.brand,   // ⬅️ mapping
+    })) : data.docs.map((v) => ({
       id: v.id,
       name: v.name,
       price: v.price,
@@ -61,7 +72,13 @@ export default async function HomePage() {
         page: 1,
       });
 
-      vouchers = data.docs.map((v) => ({
+      vouchers = USE_MOCK ? MOCK_VOUCHERS.map((v) => ({
+        id: v.id,
+        name: v.name,
+        price: v.price,
+        imageUrl: v.image,   // ⬅️ mapping
+        merchant: v.brand,   // ⬅️ mapping
+      })) : data.docs.map((v) => ({
         id: v.id,
         name: v.name,
         price: v.price,
@@ -79,7 +96,13 @@ export default async function HomePage() {
         page: 1,
       });
 
-      vouchers = data.docs.map((v) => ({
+      vouchers = USE_MOCK ? MOCK_VOUCHERS.map((v) => ({
+        id: v.id,
+        name: v.name,
+        price: v.price,
+        imageUrl: v.image,   // ⬅️ mapping
+        merchant: v.brand,   // ⬅️ mapping
+      })) : data.docs.map((v) => ({
         id: v.id,
         name: v.name,
         price: v.price,
@@ -97,7 +120,13 @@ export default async function HomePage() {
         page: 1,
       });
 
-      vouchers = data.docs.map((v) => ({
+      vouchers = USE_MOCK ? MOCK_VOUCHERS.map((v) => ({
+        id: v.id,
+        name: v.name,
+        price: v.price,
+        imageUrl: v.image,   // ⬅️ mapping
+        merchant: v.brand,   // ⬅️ mapping
+      })) : data.docs.map((v) => ({
         id: v.id,
         name: v.name,
         price: v.price,
@@ -118,7 +147,13 @@ export default async function HomePage() {
         page: 1,
       });
 
-      vouchers = data.docs.map((v) => ({
+      vouchers = USE_MOCK ? MOCK_VOUCHERS.map((v) => ({
+        id: v.id,
+        name: v.name,
+        price: v.price,
+        imageUrl: v.image,   // ⬅️ mapping
+        merchant: v.brand,   // ⬅️ mapping
+      })) : data.docs.map((v) => ({
         id: v.id,
         name: v.name,
         price: v.price,
@@ -135,7 +170,13 @@ export default async function HomePage() {
       page: 1,
     });
 
-    vouchers = data.docs.map((v) => ({
+    vouchers = USE_MOCK ? MOCK_VOUCHERS.map((v) => ({
+      id: v.id,
+      name: v.name,
+      price: v.price,
+      imageUrl: v.image,   // ⬅️ mapping
+      merchant: v.brand,   // ⬅️ mapping
+    })) : data.docs.map((v) => ({
       id: v.id,
       name: v.name,
       price: v.price,
@@ -143,6 +184,15 @@ export default async function HomePage() {
       merchant: v.clientName,
     }));
   }
+
+  vouchers = MOCK_VOUCHERS.map(v => ({
+    id: v.id,
+    name: v.name,
+    price: v.price,
+    imageUrl: v.image,
+    merchant: v.brand,
+  }));
+
 
   return (
     <main style={{

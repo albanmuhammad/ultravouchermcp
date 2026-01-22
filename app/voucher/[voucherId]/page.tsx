@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
-import { getWidgetVoucherById } from "@/app/_components/lib/ultravoucher/widgetClient";
-import { getWidgetAccessKey } from "@/app/_components/lib/ultravoucher/widgetSession";
+import { MOCK_VOUCHERS } from "@/app/_mock/vouchers";
 import { ViewVoucherEvent } from "./ViewVoucherEvent";
 import { AddToCartButton } from "./AddToCartButton";
 
@@ -11,56 +10,38 @@ type PageProps = {
 };
 
 export default async function VoucherDetailPage({ params }: PageProps) {
-    // const { voucherId } = await params;
-    // const token = await getWidgetAccessKey();
+    const { voucherId } = await params; // 🔥 WAJIB
 
-    // if (!token) {
-    //     notFound(); // atau redirect login
-    // }
+    const voucher = MOCK_VOUCHERS.find(
+        (v) => v.id === voucherId
+    );
 
-    // const voucher = await getWidgetVoucherById(token, voucherId);
-
-    // if (!voucher) {
-    //     notFound();
-    // }
-
-    const mockVoucher = {
-        id: "a5a9dfcb-a8cb-402b-a9da-3b2339e72f16",
-        name: "Traveloka Rp. 50.000",
-        code: "TLK00050",
-        nominal: 50000,
-        price: 50000,
-        stockAvailable: 905,
-        redeemed: 19,
-        image: "https://uvstaging.oss-ap-southeast-5.aliyuncs.com/mdm/assets/images/2024-05-17T01%3A37%3A45.382Zgroup.jpeg",
-        type: "VOUCHER",
-        categoryName: "Hotel",
-        merchantCode: "TLK",
-        clientName: "Sour Sally Green",
-        brand: "Traveloka", // ← tambahan agar UI tidak "-"
-    };
-
-    const voucher = mockVoucher;
-
+    if (!voucher) {
+        notFound();
+    }
 
     return (
         <main className="min-h-screen bg-gray-50 p-10">
-            {/* MCP View Event */}
             <ViewVoucherEvent
                 voucherId={voucher.id}
                 voucherName={voucher.name}
                 price={voucher.price}
             />
 
+            <div
+                id="voucher-detail"
+                data-voucher-id={voucher.id}
+                data-voucher-name={voucher.name}
+                data-voucher-price={voucher.price}
+            />
+
 
             <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow p-8">
-                {voucher.image && (
-                    <img
-                        src={voucher.image}
-                        alt={voucher.name}
-                        className="w-full rounded-xl mb-6"
-                    />
-                )}
+                <img
+                    src={voucher.image}
+                    alt={voucher.name}
+                    className="w-full rounded-xl mb-6"
+                />
 
                 <h1 className="text-2xl font-extrabold">{voucher.name}</h1>
 
@@ -69,8 +50,10 @@ export default async function VoucherDetailPage({ params }: PageProps) {
                 </p>
 
                 <p className="text-gray-600 mt-2">
-                    Merchant: <strong>{voucher.brand ?? "-"}</strong>
+                    Merchant: <strong>{voucher.brand}</strong>
                 </p>
+
+
 
                 <AddToCartButton
                     voucherId={voucher.id}

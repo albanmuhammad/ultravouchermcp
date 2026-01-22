@@ -58,7 +58,7 @@ export function AddToCartButton({
         <button
             onClick={handleClick}
             disabled={isPending}
-            className="mt-6 w-full bg-blue-600 text-white py-3 rounded-xl disabled:opacity-60"
+            className="add-to-cart-btn mt-6 w-full bg-blue-600 text-white py-3 rounded-xl disabled:opacity-60"
         >
             {isPending ? "Adding..." : "Add to Cart"}
         </button>

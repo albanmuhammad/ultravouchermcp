@@ -27,7 +27,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <McpProvider />
+        {/* <McpProvider /> */}
         <Navbar />
         {children}
       </body>
