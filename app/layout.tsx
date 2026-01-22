@@ -22,9 +22,15 @@ export default function RootLayout({
       <head>
         {/* ✅ MCX Push script */}
         <Script
+          id="evergage-sdk"
+          src="https://cdn.evgnet.com/beacon/partnermii/ultravouchermcp/scripts/evergage.min.js"
+          strategy="afterInteractive"
+        />
+        <Script
           src="https://r2.themcx.app/514008875/demomc/mcx-push.js"
           strategy="afterInteractive"
         />
+
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {/* <McpProvider /> */}
