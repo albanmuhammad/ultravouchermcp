@@ -22,11 +22,11 @@ export default async function VoucherDetailPage({ params }: PageProps) {
 
     return (
         <main className="min-h-screen bg-gray-50 p-10">
-            <ViewVoucherEvent
+            {/* <ViewVoucherEvent
                 voucherId={voucher.id}
                 voucherName={voucher.name}
                 price={voucher.price}
-            />
+            /> */}
 
             <div
                 id="voucher-detail"
