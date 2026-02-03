@@ -16,7 +16,6 @@ export function LoginForm({ redirectTo }: Props) {
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [phone, setPhone] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [infoMessage, setInfoMessage] = useState<string | null>(null);
@@ -42,6 +41,22 @@ export function LoginForm({ redirectTo }: Props) {
         });
     }, [searchParams, supabase.auth]);
 
+    async function getUserPhone(userId: string) {
+        const { data, error } = await supabase
+            .from("profiles")
+            .select("phone")
+            .eq("id", userId)
+            .single();
+
+        if (error) throw error;
+        if (!data?.phone) {
+            throw new Error("Nomor telepon belum terdaftar");
+        }
+
+        return data.phone;
+    }
+
+
     async function handleSubmit(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
         setError(null);
@@ -49,50 +64,40 @@ export function LoginForm({ redirectTo }: Props) {
         setLoading(true);
 
         try {
-            // Check if user is already logged in to Supabase
-            const { data: { user } } = await supabase.auth.getUser();
+            // 1️⃣ Login Supabase
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
 
-            if (!user) {
-                // Step 1: Login to Supabase if not logged in
-                const { error: authError } = await supabase.auth.signInWithPassword({
-                    email,
-                    password,
-                });
+            if (error) throw error;
+            if (!data.user) throw new Error("User tidak ditemukan");
 
-                if (authError) throw new Error(authError.message);
-            }
+            // 2️⃣ Ambil phone dari profiles
+            const phone = await getUserPhone(data.user.id);
 
-            // Step 2: Login to UltraVoucher to get access key (always required)
-            try {
-                await loginUvCustomer({
-                    email,
-                    phone,
-                    countryCode: "62",
-                });
-            } catch (uvError) {
-                throw new Error(
-                    uvError instanceof Error
-                        ? `UltraVoucher login failed: ${uvError.message}`
-                        : "UltraVoucher login failed"
-                );
-            }
+            // 3️⃣ Login UltraVoucher
+            await loginUvCustomer({
+                email: data.user.email!,
+                phone,
+                countryCode: "62",
+            });
 
-            localStorage.setItem("user_email", email);
-
+            // 4️⃣ Tracking (optional)
             window.Evergage?.sendEvent({
                 action: "User Login",
                 user: {
                     attributes: {
-                        emailAddress: email,
+                        emailAddress: data.user.email,
                     },
                 },
             });
 
-            // Step 3: Redirect on success
+            // 5️⃣ Redirect
             router.replace(redirectTo);
-            router.refresh(); // Force refresh to get new cookies
+            router.refresh();
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Login failed");
+            setError(err instanceof Error ? err.message : "Login gagal");
         } finally {
             setLoading(false);
         }
@@ -153,23 +158,6 @@ export function LoginForm({ redirectTo }: Props) {
                 </div>
 
                 {/* Phone */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Phone (UltraVoucher)
-                    </label>
-                    <input
-                        type="tel"
-                        required
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="812xxxxxx"
-                        disabled={loading}
-                    />
-                    <p className="text-xs text-gray-400 mt-1">
-                        Nomor yang terdaftar di UltraVoucher (tanpa +62)
-                    </p>
-                </div>
 
                 {/* Error */}
                 {error && (

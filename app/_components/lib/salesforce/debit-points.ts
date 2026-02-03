@@ -21,10 +21,10 @@ export async function debitSalesforcePoints(input: {
           InvoiceDate: new Date().toISOString().slice(0, 10),
           JournalTypeName: "Redemption",
           MemberId: input.memberId,
-          TransactionAmount: String(1000),
+          TransactionAmount: String(input.points),
           Status: "Processed",
         },
-        PointsToDebit: 1000,
+        PointsToDebit: input.points,
       },
     ],
   };

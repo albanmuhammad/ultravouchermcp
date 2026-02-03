@@ -8,27 +8,20 @@ import { getWidgetAccessKey } from "./_components/lib/ultravoucher/widgetSession
 import { cookies } from "next/headers";
 import { logoutAction } from "./actions/auth";
 import { MOCK_VOUCHERS } from "./_mock/vouchers";
+import { UltravoucherVoucher } from "./types/ultravoucher";
 
 export const metadata: Metadata = {
   title: "Available Vouchers - Ultra Voucher",
   description: "Pilih voucher yang sesuai dengan kebutuhanmu",
 };
 
-export type Voucher = Readonly<{
-  id: string;
-  name: string;
-  price: number;
-  imageUrl: string;
-  merchant: string;
-}>;
-
 
 
 
 export default async function HomePage() {
-  let vouchers: Voucher[] = [];
+  let vouchers: ReadonlyArray<UltravoucherVoucher> = [];
   let isLoggedIn = false;
-  const USE_MOCK = true;
+  const USE_MOCK = false;
 
 
   const supabase = await createSupabaseServerClient();
@@ -48,19 +41,10 @@ export default async function HomePage() {
       page: 1,
     });
 
-    vouchers = USE_MOCK ? MOCK_VOUCHERS.map((v) => ({
-      id: v.id,
-      name: v.name,
-      price: v.price,
-      imageUrl: v.image,   // ⬅️ mapping
-      merchant: v.brand,   // ⬅️ mapping
-    })) : data.docs.map((v) => ({
-      id: v.id,
-      name: v.name,
-      price: v.price,
-      imageUrl: v.image,
-      merchant: v.clientName,
-    }));
+    vouchers = USE_MOCK
+      ? MOCK_VOUCHERS
+      : data.docs;
+
   }
   // User has both Supabase and UV token
   else if (user && widgetToken) {
@@ -72,19 +56,10 @@ export default async function HomePage() {
         page: 1,
       });
 
-      vouchers = USE_MOCK ? MOCK_VOUCHERS.map((v) => ({
-        id: v.id,
-        name: v.name,
-        price: v.price,
-        imageUrl: v.image,   // ⬅️ mapping
-        merchant: v.brand,   // ⬅️ mapping
-      })) : data.docs.map((v) => ({
-        id: v.id,
-        name: v.name,
-        price: v.price,
-        imageUrl: v.image ?? "",
-        merchant: v.brand ?? "-",
-      }));
+      vouchers = USE_MOCK
+        ? MOCK_VOUCHERS
+        : data.docs;
+
     } catch (err) {
       console.error('Widget token error:', err);
 
@@ -96,19 +71,10 @@ export default async function HomePage() {
         page: 1,
       });
 
-      vouchers = USE_MOCK ? MOCK_VOUCHERS.map((v) => ({
-        id: v.id,
-        name: v.name,
-        price: v.price,
-        imageUrl: v.image,   // ⬅️ mapping
-        merchant: v.brand,   // ⬅️ mapping
-      })) : data.docs.map((v) => ({
-        id: v.id,
-        name: v.name,
-        price: v.price,
-        imageUrl: v.image,
-        merchant: v.clientName,
-      }));
+      vouchers = USE_MOCK
+        ? MOCK_VOUCHERS
+        : data.docs;
+
     }
   }
   // Widget-only user (no Supabase session)
@@ -120,19 +86,10 @@ export default async function HomePage() {
         page: 1,
       });
 
-      vouchers = USE_MOCK ? MOCK_VOUCHERS.map((v) => ({
-        id: v.id,
-        name: v.name,
-        price: v.price,
-        imageUrl: v.image,   // ⬅️ mapping
-        merchant: v.brand,   // ⬅️ mapping
-      })) : data.docs.map((v) => ({
-        id: v.id,
-        name: v.name,
-        price: v.price,
-        imageUrl: v.image ?? "",
-        merchant: v.brand ?? "-",
-      }));
+      vouchers = USE_MOCK
+        ? MOCK_VOUCHERS
+        : data.docs;
+
 
       isLoggedIn = true;
     } catch (err) {
@@ -147,19 +104,10 @@ export default async function HomePage() {
         page: 1,
       });
 
-      vouchers = USE_MOCK ? MOCK_VOUCHERS.map((v) => ({
-        id: v.id,
-        name: v.name,
-        price: v.price,
-        imageUrl: v.image,   // ⬅️ mapping
-        merchant: v.brand,   // ⬅️ mapping
-      })) : data.docs.map((v) => ({
-        id: v.id,
-        name: v.name,
-        price: v.price,
-        imageUrl: v.image,
-        merchant: v.clientName,
-      }));
+      vouchers = USE_MOCK
+        ? MOCK_VOUCHERS
+        : data.docs;
+
     }
   }
   // Non-authenticated user
@@ -170,28 +118,19 @@ export default async function HomePage() {
       page: 1,
     });
 
-    vouchers = USE_MOCK ? MOCK_VOUCHERS.map((v) => ({
-      id: v.id,
-      name: v.name,
-      price: v.price,
-      imageUrl: v.image,   // ⬅️ mapping
-      merchant: v.brand,   // ⬅️ mapping
-    })) : data.docs.map((v) => ({
-      id: v.id,
-      name: v.name,
-      price: v.price,
-      imageUrl: v.image,
-      merchant: v.clientName,
-    }));
+    vouchers = USE_MOCK
+      ? MOCK_VOUCHERS
+      : data.docs;
+
   }
 
-  vouchers = MOCK_VOUCHERS.map(v => ({
-    id: v.id,
-    name: v.name,
-    price: v.price,
-    imageUrl: v.image,
-    merchant: v.brand,
-  }));
+  // vouchers = MOCK_VOUCHERS.map(v => ({
+  //   id: v.id,
+  //   name: v.name,
+  //   price: v.price,
+  //   imageUrl: v.image,
+  //   merchant: v.clientName,
+  // }));
 
 
   return (
@@ -213,7 +152,7 @@ export default async function HomePage() {
           }}>
             Available Vouchers
           </h1>
-          <div id="homepage-voucher-banner"></div>
+          {/* <div id="homepage-voucher-banner"></div> */}
           <p style={{
             fontSize: 16,
             color: "#666",
@@ -224,7 +163,7 @@ export default async function HomePage() {
         </header>
 
         <VoucherList vouchers={vouchers} isLoggedIn={isLoggedIn} forceLogout={forceLogout} />
-        <McxPushControls />
+        {/* <McxPushControls /> */}
       </div>
     </main>
   );

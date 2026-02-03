@@ -24,20 +24,21 @@ export default async function CartPage() {
     const redeemItems =
         items?.map((item) => ({
             voucher_id: item.voucher_id,
-            price: Number(item.price),
+            point_price: Number(item.point_price),
             quantity: item.quantity,
         })) ?? [];
 
+
     const total =
         items?.reduce(
-            (sum, item) => sum + Number(item.price) * item.quantity,
+            (sum, item) => sum + Number(item.point_price) * item.quantity,
             0
         ) ?? 0;
 
     return (
         <main className="min-h-screen bg-gray-50 p-10">
             <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow p-8">
-                <h1 className="text-2xl font-extrabold mb-6">🛒 Your Cart</h1>
+                <h1 className="text-2xl font-extrabold mb-6">🛒 Your Voucher Cart</h1>
 
                 {!items || items.length === 0 ? (
                     <p className="text-gray-500">Your cart is empty</p>
@@ -63,8 +64,8 @@ export default async function CartPage() {
                                         />
                                     </div>
 
-                                    <p className="font-bold">
-                                        Rp {Number(item.price).toLocaleString("id-ID")}
+                                    <p className="font-bold text-indigo-600">
+                                        {Number(item.point_price).toLocaleString("id-ID")} Poin
                                     </p>
                                 </li>
                             ))}
@@ -73,7 +74,7 @@ export default async function CartPage() {
 
                         <div className="mt-6 flex justify-between text-lg font-bold">
                             <span>Total</span>
-                            <span>Rp {total.toLocaleString("id-ID")}</span>
+                            <span>{total.toLocaleString("id-ID")} Poin</span>
                         </div>
 
                         {/* Placeholder redeem button */}

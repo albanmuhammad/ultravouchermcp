@@ -1,13 +1,15 @@
 import type React from "react";
 import Link from "next/link";
-import { ShoppingCart, User, LogOut } from "lucide-react";
+import { ShoppingCart, User, LogOut, Coins } from "lucide-react";
 import { createSupabaseServerClient } from "../lib/supabase/server";
 import { LogoutButton } from "./LogoutButton";
+import { getUserPoints } from "../lib/salesforce/get-user-points";
 
 export async function Navbar(): Promise<React.ReactNode> {
     const supabase = await createSupabaseServerClient();
     const { data } = await supabase.auth.getUser();
     const user = data.user;
+    const points = user ? await getUserPoints() : null;
 
     return (
         <header style={{
@@ -41,7 +43,7 @@ export async function Navbar(): Promise<React.ReactNode> {
                         gap: 8,
                     }}
                 >
-                    🎫 UltraVoucher
+                    🎫 BJBS Voucher
                 </Link>
 
                 {/* Navigation Links */}
@@ -50,35 +52,6 @@ export async function Navbar(): Promise<React.ReactNode> {
                     alignItems: "center",
                     gap: 32,
                 }}>
-                    <Link
-                        href="/"
-                        style={{
-                            color: "#333",
-                            textDecoration: "none",
-                            fontWeight: 500,
-                            fontSize: 15,
-                            transition: "color 0.2s ease",
-                        }}
-                    >
-                        Vouchers
-                    </Link>
-
-                    <Link
-                        href="/cart"
-                        style={{
-                            color: "#333",
-                            textDecoration: "none",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6,
-                            fontWeight: 500,
-                            fontSize: 15,
-                            transition: "color 0.2s ease",
-                        }}
-                    >
-                        <ShoppingCart size={18} />
-                        Cart
-                    </Link>
 
                     {/* Auth Section */}
                     <div style={{
@@ -90,6 +63,55 @@ export async function Navbar(): Promise<React.ReactNode> {
                     }}>
                         {user ? (
                             <>
+                                <Link
+                                    href="/my-vouchers"
+                                    style={{
+                                        color: "#333",
+                                        textDecoration: "none",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 6,
+                                        fontWeight: 500,
+                                        fontSize: 15,
+                                    }}
+                                >
+                                    🎟️ My Voucher
+                                </Link>
+
+                                <Link
+                                    href="/cart"
+                                    style={{
+                                        color: "#333",
+                                        textDecoration: "none",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 6,
+                                        fontWeight: 500,
+                                        fontSize: 15,
+                                        transition: "color 0.2s ease",
+                                    }}
+                                >
+                                    <ShoppingCart size={18} />
+                                    Voucher Cart
+                                </Link>
+                                {/* POINT BADGE */}
+                                <div style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                    padding: "6px 12px",
+                                    background: "#eef2ff",
+                                    borderRadius: 999,
+                                    fontWeight: 600,
+                                    fontSize: 14,
+                                    color: "#4338ca",
+                                }}>
+                                    <Coins size={16} />
+                                    {points !== null
+                                        ? points.toLocaleString("id-ID")
+                                        : "—"}{" "}
+                                    Poin
+                                </div>
                                 <div style={{
                                     display: "flex",
                                     alignItems: "center",

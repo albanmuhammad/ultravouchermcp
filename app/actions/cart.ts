@@ -4,11 +4,13 @@ import { debitSalesforcePoints } from "../_components/lib/salesforce/debit-point
 import { getSalesforceMemberProfile } from "../_components/lib/salesforce/get-member-profile";
 import { createSupabaseServerActionClient } from "../_components/lib/supabase/server-action";
 import { redeemUltraVoucher } from "../_components/lib/ultravoucher/redeem";
+import { revalidatePath } from "next/cache";
 
 export type AddToCartInput = {
   voucherId: string;
   voucherName: string;
   price: number;
+  pointPrice: number;
 };
 
 export async function addToCart(input: AddToCartInput) {
@@ -27,6 +29,7 @@ export async function addToCart(input: AddToCartInput) {
     voucher_id: input.voucherId,
     voucher_name: input.voucherName,
     price: input.price,
+    point_price: input.pointPrice,
     quantity: 1,
   });
 
@@ -82,7 +85,10 @@ export async function redeemCart() {
     throw new Error("CART_EMPTY");
   }
 
-  const total = items.reduce((sum, i) => sum + Number(i.price) * i.quantity, 0);
+  const total = items.reduce(
+    (sum, i) => sum + Number(i.point_price) * i.quantity,
+    0,
+  );
 
   console.log("total", total);
 
@@ -99,7 +105,7 @@ export async function redeemCart() {
 
   /* 4️⃣ Salesforce: get member profile */
   const member = await getSalesforceMemberProfile(
-    profile.salesforce_loyalty_member_id
+    profile.salesforce_loyalty_member_id,
   );
 
   const currency = member.memberCurrencies[0];
@@ -133,6 +139,8 @@ export async function redeemCart() {
 
   /* 7️⃣ Clear cart */
   await supabase.from("cart_items").delete().eq("user_id", user.id);
+
+  revalidatePath("/");
 
   return { ok: true, orderId };
 }

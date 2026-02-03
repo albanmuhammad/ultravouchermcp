@@ -7,14 +7,14 @@ export async function redeemUltraVoucher(input: {
   quantity: number;
 }) {
   const res = await ultraVoucherSystemFetch(
-    `/v2/widget/vouchers/order/a5a9dfcb-a8cb-402b-a9da-3b2339e72f16`,
+    `/v2/widget/vouchers/order/${input.voucherId}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         quantity: input.quantity,
       }),
-    }
+    },
   );
 
   if (!res.ok) {

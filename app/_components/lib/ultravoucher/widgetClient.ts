@@ -1,4 +1,8 @@
-import type { UltravoucherV2Response } from "@/app/types/ultravoucher";
+import type {
+  UltravoucherV2ListResponse,
+  UltravoucherV2DetailResponse,
+  UltravoucherVoucher,
+} from "@/app/types/ultravoucher";
 import { WidgetUnauthorizedError } from "./errors";
 
 function mustEnv(name: string): string {
@@ -7,49 +11,31 @@ function mustEnv(name: string): string {
   return v;
 }
 
-async function widgetFetch(
+/* =========================
+ * LIST FETCH
+ * ========================= */
+async function widgetFetchList(
   token: string,
-  searchParams: URLSearchParams
-): Promise<UltravoucherV2Response> {
+  searchParams: URLSearchParams,
+): Promise<UltravoucherV2ListResponse> {
   const baseUrl = mustEnv("UV_BASE_SYSTEM_URL");
+  const url = `${baseUrl}/v2/widget/vouchers?${searchParams.toString()}`;
 
-  console.log(`${baseUrl}/v2/widget/vouchers?${searchParams.toString()}`);
+  console.log(url);
 
-  const res = await fetch(
-    `${baseUrl}/v2/widget/vouchers?${searchParams.toString()}`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
-    }
-  );
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    cache: "no-store",
+  });
 
   if (!res.ok) {
-    const text = await res.text();
-
-    // Try to parse as JSON to check for E3 error
-    try {
-      const json = JSON.parse(text);
-      if (
-        json.errorCode === "E3" ||
-        json.msg?.includes("Not found user detail data")
-      ) {
-        throw new WidgetUnauthorizedError();
-      }
-    } catch (e) {
-      // If not JSON or doesn't have E3 error, continue with normal error handling
-    }
-
-    if (res.status === 401) {
-      throw new WidgetUnauthorizedError();
-    }
-
-    throw new Error(`UV widget error ${res.status}: ${text}`);
+    await handleWidgetError(res);
   }
 
-  const json = (await res.json()) as UltravoucherV2Response;
+  const json = (await res.json()) as UltravoucherV2ListResponse;
 
   if (json.meta.code !== 0) {
     throw new Error(`UV meta.code != 0 (${json.meta.code})`);
@@ -58,6 +44,42 @@ async function widgetFetch(
   return json;
 }
 
+/* =========================
+ * DETAIL FETCH (BY ID)
+ * ========================= */
+async function widgetFetchById(
+  token: string,
+  voucherId: string,
+): Promise<UltravoucherVoucher> {
+  const baseUrl = mustEnv("UV_BASE_SYSTEM_URL");
+  const url = `${baseUrl}/v2/widget/vouchers/${voucherId}`;
+
+  console.log(url);
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    await handleWidgetError(res);
+  }
+
+  const json = (await res.json()) as UltravoucherV2DetailResponse;
+
+  if (json.meta.code !== 0) {
+    throw new Error(`UV meta.code != 0 (${json.meta.code})`);
+  }
+
+  return json.data;
+}
+
+/* =========================
+ * PUBLIC APIS
+ * ========================= */
 export async function getWidgetVouchers(
   token: string,
   params?: Readonly<{
@@ -65,8 +87,8 @@ export async function getWidgetVouchers(
     limit?: number;
     orderField?: "point" | "createdAt" | "name";
     orderType?: "ASC" | "DESC";
-  }>
-): Promise<UltravoucherV2Response["data"]> {
+  }>,
+): Promise<UltravoucherV2ListResponse["data"]> {
   const searchParams = new URLSearchParams({
     page: String(params?.page ?? 1),
     limit: String(params?.limit ?? 12),
@@ -74,21 +96,45 @@ export async function getWidgetVouchers(
     orderType: params?.orderType ?? "ASC",
   });
 
-  const json = await widgetFetch(token, searchParams);
+  const json = await widgetFetchList(token, searchParams);
   return json.data;
 }
 
 export async function getWidgetVoucherById(
   token: string,
-  voucherId: string
-): Promise<UltravoucherV2Response["data"]["docs"][number] | null> {
-  const searchParams = new URLSearchParams({
-    page: "1",
-    limit: "1",
-    voucherId: voucherId,
-  });
+  voucherId: string,
+): Promise<UltravoucherVoucher | null> {
+  try {
+    return await widgetFetchById(token, voucherId);
+  } catch (e) {
+    if (e instanceof WidgetUnauthorizedError) {
+      throw e;
+    }
+    return null;
+  }
+}
 
-  const json = await widgetFetch(token, searchParams);
+/* =========================
+ * ERROR HANDLER (SHARED)
+ * ========================= */
+async function handleWidgetError(res: Response): Promise<never> {
+  const text = await res.text();
 
-  return json.data.docs[0] ?? null;
+  try {
+    const json = JSON.parse(text);
+    if (
+      json.errorCode === "E3" ||
+      json.msg?.includes("Not found user detail data")
+    ) {
+      throw new WidgetUnauthorizedError();
+    }
+  } catch {
+    // ignore JSON parse error
+  }
+
+  if (res.status === 401) {
+    throw new WidgetUnauthorizedError();
+  }
+
+  throw new Error(`UV widget error ${res.status}: ${text}`);
 }

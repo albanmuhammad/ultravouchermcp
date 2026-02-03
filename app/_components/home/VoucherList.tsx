@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import type { Voucher } from "@/app/page";
 import { VoucherCard } from "./VoucherCard";
 import { logoutAction } from "@/app/actions/auth";
+import { UltravoucherVoucher } from "@/app/types/ultravoucher";
 
 type VoucherListProps = {
-    vouchers: ReadonlyArray<Voucher>;
+    vouchers: ReadonlyArray<UltravoucherVoucher>;
     isLoggedIn: boolean;
     forceLogout?: boolean;
 };

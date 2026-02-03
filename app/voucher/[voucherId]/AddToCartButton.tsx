@@ -8,18 +8,23 @@ type Props = Readonly<{
     voucherId: string;
     voucherName: string;
     price: number;
+    pointPrice: number;
+    disabled?: boolean;
 }>;
 
 export function AddToCartButton({
     voucherId,
     voucherName,
     price,
+    pointPrice,
+    disabled = false,
 }: Props) {
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
 
     const handleClick = () => {
-        // ✅ MCP AddToCart (DOCUMENTATION-CORRECT)
+        if (disabled) return;
+
         window.Evergage?.sendEvent({
             itemAction: "Add To Cart",
             cart: {
@@ -40,9 +45,9 @@ export function AddToCartButton({
                     voucherId,
                     voucherName,
                     price,
+                    pointPrice,
                 });
 
-                // ✅ Redirect ke cart setelah sukses
                 router.push("/cart");
             } catch (err) {
                 if (err instanceof Error && err.message === "UNAUTHENTICATED") {
@@ -57,10 +62,20 @@ export function AddToCartButton({
     return (
         <button
             onClick={handleClick}
-            disabled={isPending}
-            className="add-to-cart-btn mt-6 w-full bg-blue-600 text-white py-3 rounded-xl disabled:opacity-60"
+            disabled={disabled || isPending}
+            className={`mt-6 w-full py-3 rounded-xl font-bold transition
+        ${disabled
+                    ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                    : "bg-blue-600 text-white hover:bg-blue-700"
+                }
+        disabled:opacity-60
+      `}
         >
-            {isPending ? "Adding..." : "Add to Cart"}
+            {disabled
+                ? "Stok Habis"
+                : isPending
+                    ? "Adding..."
+                    : "Redeem Voucher"}
         </button>
     );
 }

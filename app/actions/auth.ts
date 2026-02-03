@@ -7,6 +7,7 @@ import { cookies } from "next/headers";
 import { registerUltraVoucherCustomer } from "@/app/_components/lib/ultravoucher/register-customer";
 import { enrollSalesforceIndividualMember } from "@/app/_components/lib/salesforce/enroll-individual-member";
 import { topupUltraVoucherPoint } from "../_components/lib/ultravoucher/topup";
+import { loginUvCustomer } from "../_components/lib/ultravoucher/ultravoucher-login";
 
 type ActionOk = Readonly<{ ok: true }>;
 type ActionFail = Readonly<{ ok: false; message: string }>;
@@ -46,7 +47,7 @@ function fail(message: string): ActionFail {
 /* ---------------- REGISTER ---------------- */
 
 export async function registerAction(
-  input: RegisterInput
+  input: RegisterInput,
 ): Promise<ActionResult> {
   // 0️⃣ Validate
   if (!isNonEmptyString(input.email)) return fail("Email wajib diisi.");
@@ -64,7 +65,7 @@ export async function registerAction(
   const fullName = buildFullName(firstName, lastName);
   const phone = input.phone.trim();
 
-  /* 1️⃣ Supabase Auth */
+  /* 1️⃣ Supabase Sign Up */
   const signUpRes = await supabase.auth.signUp({
     email,
     password: input.password,
@@ -82,6 +83,14 @@ export async function registerAction(
 
   const userId = signUpRes.data.user?.id;
   if (!userId) return fail("Register gagal: userId tidak terbentuk.");
+
+  /* 🔑 1.5️⃣ AUTO LOGIN (INI KUNCI UTAMA) */
+  const signInRes = await supabase.auth.signInWithPassword({
+    email,
+    password: input.password,
+  });
+
+  if (signInRes.error) return fail(signInRes.error.message);
 
   /* 2️⃣ Integrations (PARALLEL, PARTIAL FAILURE OK) */
   let ultraVoucherMemberId: string | null = null;
@@ -117,7 +126,6 @@ export async function registerAction(
         });
         salesforceMemberId = sf.loyaltyProgramMemberId;
         salesforcePersonAccountId = sf.contactId;
-        console.log(sf);
       } catch (err) {
         console.error("[SF] enroll failed", err);
       }
@@ -143,6 +151,13 @@ export async function registerAction(
 
   if (upsertRes.error) return fail(upsertRes.error.message);
 
+  await loginUvCustomer({
+    email,
+    phone,
+    countryCode: "62",
+  });
+
+  /* ✅ SELESAI — user SUDAH LOGIN */
   return { ok: true };
 }
 
